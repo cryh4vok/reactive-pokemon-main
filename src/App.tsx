@@ -1,65 +1,129 @@
-import React, { useEffect, useState, useMemo } from "react";
-import { Pokemon, getAll, getByName } from "./API";
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { Pokemon, getAll, getByName } from './API';
 
-import "./styles.css";
+import './styles.css';
+
+interface PokemonWithPower extends Pokemon {
+    power: number;
+}
 
 const calculatePower = (pokemon: Pokemon) =>
-  pokemon.hp +
-  pokemon.attack +
-  pokemon.defense +
-  pokemon.special_attack +
-  pokemon.special_defense +
-  pokemon.speed;
+    pokemon.hp +
+    pokemon.attack +
+    pokemon.defense +
+    pokemon.special_attack +
+    pokemon.special_defense +
+    pokemon.speed;
 
+let tableRender = 0;
 const PokemonTable: React.FunctionComponent<{
-  pokemon: Pokemon[];
+    pokemon: PokemonWithPower[];
 }> = ({ pokemon }) => {
-  return (
-    <table>
-      <thead>
-        <tr>
-          <td>ID</td>
-          <td>Name</td>
-          <td>Type</td>
-          <td colSpan={6}>Stats</td>
-        </tr>
-      </thead>
-      <tbody>
-        {pokemon.map((p) => (
-          <tr key={p.id}>
-            <td>{p.id}</td>
-            <td>{p.name}</td>
-            <td>{p.type.join(",")}</td>
-            <td>{p.hp}</td>
-            <td>{p.attack}</td>
-            <td>{p.defense}</td>
-            <td>{p.special_attack}</td>
-            <td>{p.special_defense}</td>
-            <td>{p.speed}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  );
+    console.log(`table render =${tableRender++}`);
+
+    return (
+        <table>
+            <thead>
+                <tr>
+                    <td>ID</td>
+                    <td>Name</td>
+                    <td>Type</td>
+                    <td colSpan={6}>Stats</td>
+                    <td>Power</td>
+                </tr>
+            </thead>
+            <tbody>
+                {pokemon.map((p) => (
+                    <tr key={p.id}>
+                        <td>{p.id}</td>
+                        <td>{p.name}</td>
+                        <td>{p.type.join(',')}</td>
+                        <td>{p.hp}</td>
+                        <td>{p.attack}</td>
+                        <td>{p.defense}</td>
+                        <td>{p.special_attack}</td>
+                        <td>{p.special_defense}</td>
+                        <td>{p.speed}</td>
+                        <td>{p.power}</td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+    );
 };
 
+const MemoedPokemonTable = React.memo(PokemonTable);
+
+let appRender = 0;
+
 export default function App() {
-  return (
-    <div>
-      <div className="top-bar">
-        <div>Search</div>
-        <input type="text"></input>
-        <div>Power threshold</div>
-        <input type="text"></input>
-        <div>Count over threshold: </div>
-      </div>
-      <div className="two-column">
-        <PokemonTable pokemon={[]} />
+    console.log(`app render =${appRender++}`);
+    const [pokemon, setPokemon] = useState<Pokemon[]>([]);
+
+    const [search, setSearch] = useState('');
+
+    const onSetSearch = useCallback(
+        (event) => setSearch(event.target.value),
+        []
+    );
+
+    useEffect(() => {
+        getByName(search).then(setPokemon);
+    }, [search]);
+
+    const pokemonWithPower = useMemo(
+        () =>
+            pokemon.map((p) => ({
+                ...p,
+                power: calculatePower(p),
+            })),
+        [pokemon]
+    );
+
+    const [threshold, setThreshold] = useState(0);
+
+    const onSetThreshold = useCallback(
+        (event) => setThreshold(parseInt(event.target.value, 10)),
+        []
+    );
+
+    const countOverThreshold = useMemo(
+        () => pokemonWithPower.filter((p) => p.power > threshold).length,
+        [pokemonWithPower, threshold]
+    );
+
+    const min = useMemo(
+        () => Math.min(...pokemonWithPower.map((p) => p.power)),
+        [pokemonWithPower]
+    );
+
+    const max = useMemo(
+        () => Math.max(...pokemonWithPower.map((p) => p.power)),
+        [pokemonWithPower]
+    );
+
+    return (
         <div>
-          <div>Min: </div>
-          <div>Max: </div>
+            <div className="top-bar">
+                <div>Search</div>
+                <input
+                    type="text"
+                    value={search}
+                    onChange={onSetSearch}></input>
+                <div>Power threshold</div>
+                <input
+                    type="text"
+                    value={threshold}
+                    onChange={onSetThreshold}></input>
+                <div>Count over threshold: {countOverThreshold}</div>
+            </div>
+            <div className="two-column">
+                <MemoedPokemonTable pokemon={pokemonWithPower} />
+                <div>
+                    <div>Min: {min}</div>
+                    <div>Max: {max}</div>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 }
