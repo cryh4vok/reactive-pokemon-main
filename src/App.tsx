@@ -19,8 +19,7 @@ let tableRender = 0;
 const PokemonTable: React.FunctionComponent<{
     pokemon: PokemonWithPower[];
 }> = ({ pokemon }) => {
-    console.log(`table render =${tableRender++}`);
-
+    console.log(`tableRender = ${tableRender++}`);
     return (
         <table>
             <thead>
@@ -55,17 +54,12 @@ const PokemonTable: React.FunctionComponent<{
 const MemoedPokemonTable = React.memo(PokemonTable);
 
 let appRender = 0;
-
 export default function App() {
-    console.log(`app render =${appRender++}`);
+    console.log(`appRender = ${appRender++}`);
     const [pokemon, setPokemon] = useState<Pokemon[]>([]);
 
     const [search, setSearch] = useState('');
-
-    const onSetSearch = useCallback(
-        (event) => setSearch(event.target.value),
-        []
-    );
+    const onSetSearch = useCallback((evt) => setSearch(evt.target.value), []);
 
     useEffect(() => {
         getByName(search).then(setPokemon);
@@ -83,7 +77,7 @@ export default function App() {
     const [threshold, setThreshold] = useState(0);
 
     const onSetThreshold = useCallback(
-        (event) => setThreshold(parseInt(event.target.value, 10)),
+        (evt) => setThreshold(parseInt(evt.target.value, 10)),
         []
     );
 
@@ -96,7 +90,6 @@ export default function App() {
         () => Math.min(...pokemonWithPower.map((p) => p.power)),
         [pokemonWithPower]
     );
-
     const max = useMemo(
         () => Math.max(...pokemonWithPower.map((p) => p.power)),
         [pokemonWithPower]
